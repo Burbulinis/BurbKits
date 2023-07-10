@@ -15,7 +15,7 @@ public class Kit {
     private List<ItemStack> kitItems = new ArrayList<>();
     private List<ItemStack> kitArmorContents;
     private ItemStack kitOffHand;
-    private String kitName;
+    private final String kitName;
     private PlayerInventory kitInventory;
 
     /**
@@ -79,8 +79,10 @@ public class Kit {
         kitInventory = inv;
         kitArmorContents = List.of(kitInventory.getArmorContents());
         kitOffHand = kitInventory.getItemInOffHand();
+        kitHotbarItems.clear();
+        kitItems.clear();
         for (int i = 0; i < 35; i++) {
-            if (i >= 0 && i < 8) {
+            if (i < 8) {
                 kitHotbarItems.add(kitInventory.getItem(i));
             } else {
                 kitItems.add(kitInventory.getItem(i));
@@ -97,11 +99,12 @@ public class Kit {
         kitArmorContents = List.of(kitInventory.getArmorContents());
         kitOffHand = kitInventory.getItemInOffHand();
         for (int i = 0; i < 35; i++) {
-            if (i >= 0 && i < 8) {
+            if (i < 8) {
                 kitHotbarItems.add(kitInventory.getItem(i));
             } else {
                 kitItems.add(kitInventory.getItem(i));
             }
         }
+        kitFromName.put(kitName, this);
     }
 }

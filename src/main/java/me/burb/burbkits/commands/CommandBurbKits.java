@@ -12,7 +12,7 @@ public class CommandBurbKits implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (sender instanceof Player) {
-            Player player = ((Player) sender).getPlayer();
+            Player player = (Player) sender;
             PlayerInventory playerInv = player.getInventory();
             if (args[0].equalsIgnoreCase("create") && args[1] != null) {
                 new Kit(playerInv, args[1]);
