@@ -1,0 +1,4 @@
+main: me.burb.kits.Kits
+name: BurbKits
+version: 1
+api-version: '1.20'
