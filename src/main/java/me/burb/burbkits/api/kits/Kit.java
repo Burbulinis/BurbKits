@@ -217,9 +217,7 @@ public class Kit {
                 Calendar otherCalendar = Calendar.getInstance();
                 calendar.setTimeInMillis(time);
                 otherCalendar.setTimeInMillis(System.currentTimeMillis());
-                if (calendar.after(otherCalendar)) {
-                    return false;
-                } else { return true; }
+                return !calendar.after(otherCalendar);
             }
         }
         return false;

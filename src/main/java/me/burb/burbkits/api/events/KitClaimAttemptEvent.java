@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class KitClaimAttemptEvent extends KitEvent implements Cancellable {
     private final Player player;
-    private boolean success;
+    private final boolean success;
     private boolean cancelled;
     private static final HandlerList HANDLERS = new HandlerList();
 

@@ -1,7 +1,6 @@
 package me.burb.burbkits.api.events;
 
 import me.burb.burbkits.api.kits.Kit;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;

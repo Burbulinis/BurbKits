@@ -8,8 +8,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
 
-import java.time.Period;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -74,10 +74,7 @@ public class CommandKits implements TabExecutor {
                 if (args.length >= 4) {
                     if (leKit != null) {
                         String timeString;
-                        List<String> argList = new ArrayList<>();
-                        for (int i = 1; i < args.length; i++) {
-                            argList.add(args[i]);
-                        }
+                        List<String> argList = new ArrayList<>(Arrays.asList(args).subList(1, args.length));
                         long timeInMillis = Utils.stringToMillis(Utils.getWholeString(argList));
                         leKit.setCooldown(timeInMillis);
                         sender.sendMessage(Utils.color("&aSuccessfully set the cooldown of the Kit '" + arg2 + "' to '" + Utils.millisToString(timeInMillis)) + "'");
