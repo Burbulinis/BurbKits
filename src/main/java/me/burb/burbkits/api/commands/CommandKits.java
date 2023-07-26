@@ -9,7 +9,6 @@ import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -73,10 +72,12 @@ public class CommandKits implements TabExecutor {
             } else if (arg1.equalsIgnoreCase("setCooldown")) {
                 if (args.length >= 4) {
                     if (leKit != null) {
-                        String timeString;
-                        List<String> argList = new ArrayList<>(Arrays.asList(args).subList(1, args.length));
+                        List<String> argList = new ArrayList<>();
+                        for (int i = 2; i < args.length; i++) {
+                            argList.add(args[i]);
+                        }
                         long timeInMillis = Utils.stringToMillis(Utils.getWholeString(argList));
-                        leKit.setCooldown(timeInMillis);
+                        leKit.setKitCooldown(timeInMillis);
                         sender.sendMessage(Utils.color("&aSuccessfully set the cooldown of the Kit '" + arg2 + "' to '" + Utils.millisToString(timeInMillis)) + "'");
                     } else { sender.sendMessage(Utils.color("&cKit named '" + arg2 + "' does not exist!")); }
                 } else { sender.sendMessage(Utils.color("&cPlease enter the arguments!")); }

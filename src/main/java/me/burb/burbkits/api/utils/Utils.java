@@ -7,7 +7,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringJoiner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.bukkit.ChatColor.translateAlternateColorCodes;
 
@@ -54,23 +57,34 @@ public class Utils {
         return timeString.toString().trim();
     }
 
-    public static long stringToMillis(String s) {
-        HashMap<String, Long> timeUnits = new HashMap<>();
+    public static long stringToMillis(String timeString) {
+        Map<String, Long> timeUnits = new HashMap<>();
         timeUnits.put("milliseconds", 1L);
         timeUnits.put("seconds", 1000L);
         timeUnits.put("minutes", 60000L);
         timeUnits.put("hours", 3600000L);
         timeUnits.put("days", 86400000L);
+        timeUnits.put("millisecond", 1L);
+        timeUnits.put("second", 1000L);
+        timeUnits.put("minute", 60000L);
+        timeUnits.put("hour", 3600000L);
+        timeUnits.put("day", 86400000L);
 
-        String[] units = s.split(" ");
+        Pattern pattern = Pattern.compile("(\\d+)\\s*(\\S+)");
+        Matcher matcher = pattern.matcher(timeString);
         long totalMilliseconds = 0;
 
-        for (int i = 0; i < units.length; i += 2) {
-            int value = Integer.parseInt(units[i]);
-            String unit = units[i + 1].toLowerCase();
+        while (matcher.find()) {
+            int value = Integer.parseInt(matcher.group(1));
+            String unit = matcher.group(2).toLowerCase();
 
-            totalMilliseconds += value * timeUnits.get(unit);
+            if (timeUnits.containsKey(unit)) {
+                totalMilliseconds += value * timeUnits.get(unit);
+            } else {
+                throw new IllegalArgumentException("Unsupported time unit: " + unit);
+            }
         }
+
         return totalMilliseconds;
     }
     public static String getWholeString(List<String> strList) {

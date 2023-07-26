@@ -1,5 +1,6 @@
 package me.burb.burbkits;
 
+import me.burb.burbkits.api.Metrics;
 import me.burb.burbkits.api.commands.CommandKits;
 import me.burb.burbkits.api.kits.Kit;
 import me.burb.burbkits.api.listener.BurbListener;
@@ -14,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.UUID;
 
 public class BurbKits extends JavaPlugin {
     public static YamlConfiguration kitsConfig;
@@ -31,6 +33,10 @@ public class BurbKits extends JavaPlugin {
 
     @Override
     public void onEnable() {
+
+        int pluginId = 19241;
+        Metrics metrics = new Metrics(this, pluginId);
+
         File kitsFile = new File(getDataFolder(), "kits.yml");
         File cooldownsFile = new File(getDataFolder(), "cooldowns.yml");
 
@@ -79,7 +85,15 @@ public class BurbKits extends JavaPlugin {
                 Kit kit = new Kit(key);
                 kit.setItems(items);
                 kit.setPermission(permission);
-                kit.setCooldown(cooldown);
+                kit.setKitCooldown(cooldown);
+                if (cooldownsConfig.contains("cooldowns")) {
+                    Set<String> UUIDs = cooldownsConfig.getConfigurationSection("cooldowns."+key).getKeys(false);
+                    getLogger().info(UUIDs.toString());
+                    for (String uuid : UUIDs) {
+                        long millis = cooldownsConfig.getLong("cooldowns."+key+"."+uuid+".cooldown");
+                        kit.setPlayerCooldown(millis, Bukkit.getOfflinePlayer(UUID.fromString(uuid)));
+                    }
+                }
             }
         }
 

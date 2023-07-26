@@ -4,6 +4,7 @@ import me.burb.burbkits.BurbKits;
 import me.burb.burbkits.api.events.*;
 import me.burb.burbkits.api.utils.Utils;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -15,9 +16,10 @@ import java.util.*;
 import static org.bukkit.Material.BLACK_STAINED_GLASS_PANE;
 import static org.bukkit.Sound.ITEM_ARMOR_EQUIP_CHAIN;
 
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation", "unused"})
 public class Kit {
     private static final HashMap<String, Kit> ALL_KITS = new HashMap<>();
+    private final HashMap<OfflinePlayer, Long> cooldowns = new HashMap<>();
     private static final List<Kit> KITS = new ArrayList<>();
     private static final List<String> KIT_NAMES = new ArrayList<>();
     private static final List<Inventory> KIT_INVENTORIES = new ArrayList<>();
@@ -32,8 +34,8 @@ public class Kit {
      * @param player The player that gets the kit
      */
     public void claimKit(Player player) {
-        boolean success = !hasCooldown(player);
-        if (!success) { success = hasPermission(player); }
+        boolean success;
+        success = hasPermission(player) && !hasCooldown(player);
         PlayerInventory inv = player.getInventory();
         Set<Integer> keys = items.keySet();
         KitClaimAttemptEvent attemptEvent = new KitClaimAttemptEvent(this, player, success);
@@ -53,16 +55,11 @@ public class Kit {
                 player.sendMessage(Utils.color("&aSuccessfully claimed the Kit '" + name + "'"));
                 player.playSound(player, ITEM_ARMOR_EQUIP_CHAIN, 1, 0);
                 BurbKits.getPluginManager().callEvent(new KitClaimEvent(this, player));
+                if (cooldown != 0) { setPlayerCooldown(System.currentTimeMillis() + cooldown, player); }
             } else if (!hasPermission(player)) {
                 player.sendMessage(Utils.color("&cYou don't have permission!"));
             } else if (hasCooldown(player)) {
-                long time = BurbKits.cooldownsConfig.getLong("cooldowns."+name+"."+player.getUniqueId()+".cooldown");
-                Calendar calendar = Calendar.getInstance();
-                Calendar otherCalendar = Calendar.getInstance();
-                calendar.setTimeInMillis(time);
-                otherCalendar.setTimeInMillis(System.currentTimeMillis());
-                long leTime = otherCalendar.compareTo(calendar);
-                String timeString = "&cYou can only claim this kit in&e " + Utils.millisToString(leTime) + "&c!";
+                String timeString = "&cYou can only claim this kit in&e " + getPlayerCooldownDifferenceBetweenNowAsString(player) + "&c!";
                 player.sendMessage(Utils.color(timeString));
             }
         }
@@ -75,21 +72,24 @@ public class Kit {
      * @param player The player to open the inventory to
      */
     public void seeItems(Player player) {
-        Utils.fillAllSlots(inventory, BLACK_STAINED_GLASS_PANE);
-        Set<Integer> keys = items.keySet();
-        for (int i : keys) {
-            if (i <= 8) {
-                inventory.setItem(i + 36, items.get(i));
-            } else if (i <= 35) {
-                inventory.setItem(i - 9, items.get(i));
-            } else if (i <= 39) {
-                inventory.setItem(i + 9, items.get(i));
-            } else if (i == 40) {
-                inventory.setItem(49, items.get(i));
+        KitViewItemsEvent event = new KitViewItemsEvent(this, player, inventory, items);
+        BurbKits.getPluginManager().callEvent(event);
+        if (!event.isCancelled()) {
+            Utils.fillAllSlots(inventory, BLACK_STAINED_GLASS_PANE);
+            Set<Integer> keys = items.keySet();
+            for (int i : keys) {
+                if (i <= 8) {
+                    inventory.setItem(i + 36, items.get(i));
+                } else if (i <= 35) {
+                    inventory.setItem(i - 9, items.get(i));
+                } else if (i <= 39) {
+                    inventory.setItem(i + 9, items.get(i));
+                } else if (i == 40) {
+                    inventory.setItem(49, items.get(i));
+                }
             }
+            player.openInventory(inventory);
         }
-        BurbKits.getPluginManager().callEvent(new KitViewItemsEvent(this, player, inventory, items));
-        player.openInventory(inventory);
     }
 
 
@@ -97,16 +97,19 @@ public class Kit {
      * Delete a kit
      */
     public void deleteKit() {
-        BurbKits.getPluginManager().callEvent(new KitDeleteEvent(this));
-        BurbKits.kitsConfig.set("kits."+name, null);
-        BurbKits.cooldownsConfig.set("cooldowns."+name, null);
-        KIT_NAMES.remove(name);
-        ALL_KITS.remove(name);
-        KITS.remove(this);
-        KIT_INVENTORIES.remove(inventory);
-        items.clear();
-        name = null;
-        inventory = null;
+        KitDeleteEvent event = new KitDeleteEvent(this);
+        BurbKits.getPluginManager().callEvent(event);
+        if (!event.isCancelled()) {
+            BurbKits.kitsConfig.set("kits."+name, null);
+            BurbKits.cooldownsConfig.set("cooldowns."+name, null);
+            KIT_NAMES.remove(name);
+            ALL_KITS.remove(name);
+            KITS.remove(this);
+            KIT_INVENTORIES.remove(inventory);
+            items.clear();
+            name = null;
+            inventory = null;
+        }
     }
 
     /**
@@ -114,14 +117,17 @@ public class Kit {
      * @param items Items
      */
     public void setItems(TreeMap<Integer, ItemStack> items) {
-        BurbKits.getPluginManager().callEvent(new KitItemsChangeEvent(this, this.items, items));
-        for (int i = 0; i <= 40; i++) {
-            if (items.get(i) == null) {
-                items.remove(i);
+        KitItemsChangeEvent event = new KitItemsChangeEvent(this, this.items, items);
+        BurbKits.getPluginManager().callEvent(event);
+        if (!event.isCancelled()) {
+            for (int i = 0; i <= 40; i++) {
+                if (items.get(i) == null) {
+                    items.remove(i);
+                }
             }
+            this.items = items;
+            BurbKits.kitsConfig.set("kits." + getName() + ".items", this.items);
         }
-        this.items = items;
-        BurbKits.kitsConfig.set("kits." + getName() + ".items", this.items);
     }
 
     /**
@@ -129,19 +135,38 @@ public class Kit {
      * @param perm Permission
      */
     public void setPermission(String perm) {
-        BurbKits.getPluginManager().callEvent(new KitPermissionChangeEvent(this, permission, perm));
-        permission = perm;
-        BurbKits.kitsConfig.set("kits." + getName() + ".permission", perm);
+        KitPermissionChangeEvent event = new KitPermissionChangeEvent(this, permission, perm);
+        BurbKits.getPluginManager().callEvent(event);
+        if (!event.isCancelled()) {
+            permission = perm;
+            BurbKits.kitsConfig.set("kits." + getName() + ".permission", perm);
+        }
     }
 
     /**
      * Set the cooldown of the Kit
      * @param cooldown Cooldown
      */
-    public void setCooldown(long cooldown) {
-        BurbKits.getPluginManager().callEvent(new KitCooldownChangeEvent(this, this.cooldown, cooldown));
-        this.cooldown = cooldown;
-        BurbKits.kitsConfig.set("kits." + getName() + ".cooldown", this.cooldown);
+    public void setKitCooldown(long cooldown) {
+        KitCooldownChangeEvent event = new KitCooldownChangeEvent(this, this.cooldown, cooldown);
+        BurbKits.getPluginManager().callEvent(event);
+        if (!event.isCancelled()) {
+            this.cooldown = cooldown;
+            BurbKits.kitsConfig.set("kits." + getName() + ".cooldown", this.cooldown);
+        }
+    }
+
+    /**
+     * @param millis The millis have to be formatted as UTC milliseconds from the epoch. You can use the resetCooldown method to reset the cooldown.
+     * @param player The player that should receive the cooldown
+     */
+    public void setPlayerCooldown(long millis, OfflinePlayer player) {
+        KitPlayerCooldownChangeEvent event = new KitPlayerCooldownChangeEvent(this, player, cooldowns.get(player) == null ? 0 : cooldowns.get(player), millis);
+        BurbKits.getPluginManager().callEvent(event);
+        if (!event.isCancelled()) {
+            cooldowns.put(player, millis);
+            BurbKits.cooldownsConfig.set("cooldowns."+name+"."+player.getUniqueId()+".cooldown", millis);
+        }
     }
 
     /**
@@ -175,6 +200,64 @@ public class Kit {
     }
 
     /**
+     * @param player The player to check the cooldown of
+     * @return Returns the time when the cooldown should be over for the specified Kit as UTC milliseconds from the epoch
+     */
+    public long getPlayerCooldownAsMillis(OfflinePlayer player) {
+        return cooldowns.get(player);
+    }
+
+    /**
+     * @param player The player to check the cooldown of
+     * @return Returns the time when the cooldown should be over for the specified Kit as a date
+     */
+    public @Nullable Date getPlayerCooldownAsDate(OfflinePlayer player) {
+        Calendar calendar = Calendar.getInstance();
+        if (cooldowns.get(player) != null) { calendar.setTimeInMillis(cooldowns.get(player)); }
+        return calendar.getTime();
+    }
+
+    /**
+     * @param player The player to check for
+     * @return The difference between now and the cooldown, ie how much time left till they are able to claim in a String
+     */
+    public @Nullable String getPlayerCooldownDifferenceBetweenNowAsString(OfflinePlayer player) {
+        if (cooldown != 0 && cooldowns.get(player) != null) {
+            long time = cooldowns.get(player);
+            Calendar calendar = Calendar.getInstance();
+            Calendar otherCalendar = Calendar.getInstance();
+            calendar.setTimeInMillis(time);
+            otherCalendar.setTimeInMillis(System.currentTimeMillis());
+            return (calendar.getTimeInMillis() < otherCalendar.getTimeInMillis()) ? null : Utils.millisToString((calendar.getTimeInMillis() - System.currentTimeMillis()));
+        }
+        return null;
+    }
+
+    /**
+     * @param player The player to check for
+     * @return The difference between now and the cooldown, ie how much time left till they are able to claim in milliseconds, 0 if no cooldown
+     */
+    public long getPlayerCooldownDifferenceBetweenNowAsMillis(OfflinePlayer player) {
+        if (cooldown != 0 && cooldowns.get(player) != null) {
+            long time = cooldowns.get(player);
+            return (time < System.currentTimeMillis()) ? 0 : (time - System.currentTimeMillis());
+        }
+        return 0;
+    }
+
+    /**
+     * @param player Player to check for
+     * @return true/false if they have the cooldown, true if permission doesn't exist
+     */
+    public boolean hasCooldown(OfflinePlayer player) {
+        if (cooldown != 0 && cooldowns.get(player) != null) {
+            long time = cooldowns.get(player);
+            return !(time < System.currentTimeMillis());
+        }
+        return false;
+    }
+
+    /**
      * @return The name of the kit
      */
     public String getName() {
@@ -191,7 +274,7 @@ public class Kit {
     /**
      * @return Cool down of the Kit
      */
-    public long getCooldown() {
+    public long getKitCooldown() {
         return cooldown;
     }
 
@@ -209,23 +292,18 @@ public class Kit {
         return items;
     }
 
-    public boolean hasCooldown(Player player) {
-        long time = BurbKits.cooldownsConfig.getLong("cooldowns." + name + "." + player.getUniqueId() + ".cooldown");
-        if (cooldown != 0) {
-            if (time != 0) {
-                Calendar calendar = Calendar.getInstance();
-                Calendar otherCalendar = Calendar.getInstance();
-                calendar.setTimeInMillis(time);
-                otherCalendar.setTimeInMillis(System.currentTimeMillis());
-                return !calendar.after(otherCalendar);
-            }
-        }
-        return false;
-    }
-
+    /**
+     * @param player Player to check for
+     * @return true/false if player has permission
+     */
     public boolean hasPermission(Player player) {
         if (permission != null) { return player.hasPermission(permission); }
-        else { return false; }
+        else { return true; }
+    }
+
+    public void resetCooldown(Player player) {
+        cooldowns.put(player, 0L);
+        BurbKits.cooldownsConfig.set("cooldowns."+name+"."+player.getUniqueId()+".cooldown", null);
     }
 
     /**
@@ -233,16 +311,18 @@ public class Kit {
      * @param name Name of the Kit
      */
     public Kit(String name) {
-        if (ALL_KITS.get(name) != null) {
-            throw new RuntimeException("Kit '" + name + "' already exists");
+        KitCreateEvent event = new KitCreateEvent(this);
+        BurbKits.getPluginManager().callEvent(event);
+        if (!event.isCancelled()) {
+            if (ALL_KITS.get(name) != null) {
+                throw new RuntimeException("Kit '" + name + "' already exists");
+            }
+            this.inventory = Bukkit.createInventory(null, 54, Utils.color("&0Kit '" + name + "'"));
+            KIT_INVENTORIES.add(this.inventory);
+            KIT_NAMES.add(name);
+            this.name = name;
+            ALL_KITS.put(name, this);
+            BurbKits.kitsConfig.createSection("kits." + name);
         }
-        this.inventory = Bukkit.createInventory(null, 54, Utils.color("&0Kit '" + name + "'"));
-        KIT_INVENTORIES.add(this.inventory);
-        KIT_NAMES.add(name);
-        this.name = name;
-        ALL_KITS.put(name, this);
-        cooldown = 0;
-        BurbKits.kitsConfig.createSection("kits." + name);
-        BurbKits.getPluginManager().callEvent(new KitCreateEvent(this));
     }
 }

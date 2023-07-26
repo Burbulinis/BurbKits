@@ -1,7 +1,7 @@
 main: me.burb.burbkits.BurbKits
 name: BurbKits
 version: 1.0.0
-api-version: '1.20'
+api-version: '1.13'
 commands:
   kits:
     usage: /kits
