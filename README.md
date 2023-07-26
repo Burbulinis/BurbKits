@@ -3,7 +3,7 @@
 **BurbKits** is a simple Minecraft plugin to create cool kits.
 For any issues or suggestions, please make sure to visit [right here](https://github.com/Burbulinis/BurbKits/issues)
 
-## Download ✔
+## Downloads ✔
   You can find every version of this plugin [here](https://github.com/Burbulinis/BurbKits/releases)
 
 ## Commands 📢
