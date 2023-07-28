@@ -33,6 +33,26 @@ public class Kit {
     private String name;
 
     /**
+     * Create a new Kit
+     * @param name Name of the Kit
+     */
+    public Kit(String name) {
+        KitCreateEvent event = new KitCreateEvent(this);
+        BurbKits.getPluginManager().callEvent(event);
+        if (!event.isCancelled()) {
+            if (ALL_KITS.get(name) != null) {
+                throw new RuntimeException("Kit '" + name + "' already exists");
+            }
+            this.inventory = Bukkit.createInventory(null, 54, Utils.color("&0Kit '" + name + "'"));
+            KIT_INVENTORIES.add(this.inventory);
+            KIT_NAMES.add(name);
+            this.name = name;
+            ALL_KITS.put(name, this);
+            kitsConfig.createSection("kits." + name);
+        }
+    }
+
+    /**
      * Claim the kit
      * @param player The player that gets the kit
      * @return The success, ie if they could claim the kit, or not
@@ -101,26 +121,6 @@ public class Kit {
         }
     }
 
-
-    /**
-     * Delete a kit
-     */
-    public void deleteKit() {
-        KitDeleteEvent event = new KitDeleteEvent(this);
-        BurbKits.getPluginManager().callEvent(event);
-        if (!event.isCancelled()) {
-            kitsConfig.set("kits."+name, null);
-            BurbKits.cooldownsConfig.set("cooldowns."+name, null);
-            KIT_NAMES.remove(name);
-            ALL_KITS.remove(name);
-            KITS.remove(this);
-            KIT_INVENTORIES.remove(inventory);
-            items.clear();
-            name = null;
-            inventory = null;
-        }
-    }
-
     /**
      * Set the items of the Kit
      * @param items Items
@@ -138,6 +138,25 @@ public class Kit {
                 }
             }
             kitsConfig.set("kits." + getName() + ".items", this.items);
+        }
+    }
+
+    /**
+     * Delete a kit
+     */
+    public void deleteKit() {
+        KitDeleteEvent event = new KitDeleteEvent(this);
+        BurbKits.getPluginManager().callEvent(event);
+        if (!event.isCancelled()) {
+            kitsConfig.set("kits."+name, null);
+            BurbKits.cooldownsConfig.set("cooldowns."+name, null);
+            KIT_NAMES.remove(name);
+            ALL_KITS.remove(name);
+            KITS.remove(this);
+            KIT_INVENTORIES.remove(inventory);
+            items.clear();
+            name = null;
+            inventory = null;
         }
     }
 
@@ -180,9 +199,44 @@ public class Kit {
         }
     }
 
+    /**
+     * Reset the cooldown of a player
+     * @param player The player to reset the cooldown of
+     */
+    public void resetCooldown(Player player) {
+        KitPlayerCooldownChangeEvent event = new KitPlayerCooldownChangeEvent(this, player, cooldowns.get(player), 0);
+        BurbKits.getPluginManager().callEvent(event);
+        if (!event.isCancelled()) {
+            cooldowns.put(player, 0L);
+            BurbKits.cooldownsConfig.set("cooldowns."+name+"."+player.getUniqueId()+".cooldown", null);
+        }
+    }
+
     public void setCooldownBypassPermission(String perm) {
         cooldownBypassPermission = perm;
         BurbKits.kitsConfig.set("kits."+name+".cooldownBypass", perm);
+    }
+
+    /**
+     * @param player Player to check for
+     * @return true/false if player has permission
+     */
+    public boolean hasPermission(Player player) {
+        if (permission != null) { return player.hasPermission(permission); }
+        else { return true; }
+    }
+
+    /**
+     * @param player Player to check for
+     * @return true/false if they have the cooldown, true if permission doesn't exist
+     */
+    public boolean hasCooldown(Player player) {
+        if (cooldown != 0 && cooldowns.get(player) != null) {
+            long time = cooldowns.get(player);
+            if (cooldownBypassPermission != null && player.hasPermission(cooldownBypassPermission)) { return false; }
+            return !(time < System.currentTimeMillis());
+        }
+        return false;
     }
 
     /**
@@ -262,19 +316,6 @@ public class Kit {
     }
 
     /**
-     * @param player Player to check for
-     * @return true/false if they have the cooldown, true if permission doesn't exist
-     */
-    public boolean hasCooldown(Player player) {
-        if (cooldown != 0 && cooldowns.get(player) != null) {
-            long time = cooldowns.get(player);
-            if (cooldownBypassPermission != null && player.hasPermission(cooldownBypassPermission)) { return false; }
-            return !(time < System.currentTimeMillis());
-        }
-        return false;
-    }
-
-    /**
      * @return The name of the kit
      */
     public String getName() {
@@ -307,39 +348,5 @@ public class Kit {
      */
     public TreeMap<Integer, ItemStack> getItems() {
         return items;
-    }
-
-    /**
-     * @param player Player to check for
-     * @return true/false if player has permission
-     */
-    public boolean hasPermission(Player player) {
-        if (permission != null) { return player.hasPermission(permission); }
-        else { return true; }
-    }
-
-    public void resetCooldown(Player player) {
-        cooldowns.put(player, 0L);
-        BurbKits.cooldownsConfig.set("cooldowns."+name+"."+player.getUniqueId()+".cooldown", null);
-    }
-
-    /**
-     * Create a new Kit
-     * @param name Name of the Kit
-     */
-    public Kit(String name) {
-        KitCreateEvent event = new KitCreateEvent(this);
-        BurbKits.getPluginManager().callEvent(event);
-        if (!event.isCancelled()) {
-            if (ALL_KITS.get(name) != null) {
-                throw new RuntimeException("Kit '" + name + "' already exists");
-            }
-            this.inventory = Bukkit.createInventory(null, 54, Utils.color("&0Kit '" + name + "'"));
-            KIT_INVENTORIES.add(this.inventory);
-            KIT_NAMES.add(name);
-            this.name = name;
-            ALL_KITS.put(name, this);
-            kitsConfig.createSection("kits." + name);
-        }
     }
 }
