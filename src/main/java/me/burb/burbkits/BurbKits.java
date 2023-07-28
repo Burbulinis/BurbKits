@@ -1,6 +1,5 @@
 package me.burb.burbkits;
 
-import ch.njol.skript.SkriptAddon;
 import me.burb.burbkits.api.Metrics;
 import me.burb.burbkits.api.commands.CommandKits;
 import me.burb.burbkits.api.kits.Kit;
