@@ -70,24 +70,37 @@ public class CommandKits implements TabExecutor {
                     } else { player.sendMessage(Utils.color("&cKit named '" + arg2 + "' does not exist!")); }
                 } else { sender.sendMessage(Utils.color("&cYou cannot use this command in console!")); }
             } else if (arg1.equalsIgnoreCase("setCooldown")) {
-                if (args.length >= 4) {
-                    if (leKit != null) {
-                        List<String> argList = new ArrayList<>();
-                        for (int i = 2; i < args.length; i++) {
-                            argList.add(args[i]);
-                        }
-                        long timeInMillis = Utils.stringToMillis(Utils.getWholeString(argList));
-                        leKit.setKitCooldown(timeInMillis);
-                        sender.sendMessage(Utils.color("&aSuccessfully set the cooldown of the Kit '" + arg2 + "' to '" + Utils.millisToString(timeInMillis)) + "'");
-                    } else { sender.sendMessage(Utils.color("&cKit named '" + arg2 + "' does not exist!")); }
-                } else { sender.sendMessage(Utils.color("&cPlease enter the arguments!")); }
+                if (sender.hasPermission("burbkits.managekits")) {
+                    if (args.length >= 4) {
+                        if (leKit != null) {
+                            List<String> argList = new ArrayList<>();
+                            for (int i = 2; i < args.length; i++) {
+                                argList.add(args[i]);
+                            }
+                            long timeInMillis = Utils.stringToMillis(Utils.getWholeString(argList));
+                            leKit.setKitCooldown(timeInMillis);
+                            sender.sendMessage(Utils.color("&aSuccessfully set the cooldown of the Kit '" + arg2 + "' to '" + Utils.millisToString(timeInMillis)) + "'");
+                        } else { sender.sendMessage(Utils.color("&cKit named '" + arg2 + "' does not exist!")); }
+                    } else { sender.sendMessage(Utils.color("&cPlease enter the arguments!")); }
+                } else { sender.sendMessage(Utils.color("&cYou don't have permission!")); }
+            } else if (arg1.equalsIgnoreCase("setCooldownBypass")) {
+                if (sender.hasPermission("burbkits.managekits")) {
+                    if (args.length >= 3) {
+                        if (leKit != null) {
+                            leKit.setCooldownBypassPermission(args[2]);
+                            sender.sendMessage(Utils.color("&aSuccessfully set the cooldown bypass permission of the Kit '" + leKit.getName() + "' to '" + args[2] +"'"));
+                        } else { sender.sendMessage(Utils.color("&cKit named '" + arg2 + "' does not exist!")); }
+                    } else { sender.sendMessage(Utils.color("&cPlease enter the arguments!")); }
+                } else { sender.sendMessage(Utils.color("&cYou don't have permission!")); }
             } else if (arg1.equalsIgnoreCase("setPermission")) {
-                if (args.length == 3) {
-                    if (leKit != null) {
-                        leKit.setPermission(args[2]);
-                        sender.sendMessage(Utils.color("&aSuccessfully set the permission of Kit '" + arg2 + "' to '" + args[2] + "'"));
-                    } else { sender.sendMessage(Utils.color("&cKit named '" + arg2 + "' does not exist!")); }
-                } else { sender.sendMessage(Utils.color("&cPlease enter the arguments!")); }
+                if (sender.hasPermission("burbkits.managekits")) {
+                    if (args.length == 3) {
+                        if (leKit != null) {
+                            leKit.setPermission(args[2]);
+                            sender.sendMessage(Utils.color("&aSuccessfully set the permission of Kit '" + arg2 + "' to '" + args[2] + "'"));
+                        } else { sender.sendMessage(Utils.color("&cKit named '" + arg2 + "' does not exist!")); }
+                    } else { sender.sendMessage(Utils.color("&cPlease enter the arguments!")); }
+                } else { sender.sendMessage(Utils.color("&cYou don't have permission!")); }
             }
         } else {
             sender.sendMessage(Utils.color("&cPlease enter all the arguments"));
@@ -98,7 +111,7 @@ public class CommandKits implements TabExecutor {
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (args.length == 1) {
             if (sender instanceof Player && sender.hasPermission("burbkits.managekits")) {
-                return List.of("create", "delete", "info", "claim", "override", "setPermission", "setCooldown");
+                return List.of("create", "delete", "info", "claim", "override", "setPermission", "setCooldown", "setCooldownBypass");
             } else if (sender instanceof Player && !sender.hasPermission("BurbKits.manageKits")) {
                 return List.of("info", "claim");
             }

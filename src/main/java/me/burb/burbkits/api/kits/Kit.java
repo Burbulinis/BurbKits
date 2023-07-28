@@ -13,42 +13,48 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
+import static me.burb.burbkits.BurbKits.kitsConfig;
 import static org.bukkit.Material.BLACK_STAINED_GLASS_PANE;
 import static org.bukkit.Sound.ITEM_ARMOR_EQUIP_CHAIN;
 
 @SuppressWarnings({"deprecation", "unused"})
 public class Kit {
+
     private static final HashMap<String, Kit> ALL_KITS = new HashMap<>();
     private final HashMap<OfflinePlayer, Long> cooldowns = new HashMap<>();
     private static final List<Kit> KITS = new ArrayList<>();
     private static final List<String> KIT_NAMES = new ArrayList<>();
     private static final List<Inventory> KIT_INVENTORIES = new ArrayList<>();
-    private TreeMap<Integer, ItemStack> items = new TreeMap<>();
+    private final TreeMap<Integer, ItemStack> items = new TreeMap<>();
     private Inventory inventory;
     private long cooldown;
     private String permission;
+    private String cooldownBypassPermission;
     private String name;
 
     /**
      * Claim the kit
      * @param player The player that gets the kit
+     * @return The success, ie if they could claim the kit, or not
      */
-    public void claimKit(Player player) {
+    public boolean claimKit(Player player) {
         boolean success;
-        success = hasPermission(player) && !hasCooldown(player);
-        PlayerInventory inv = player.getInventory();
-        Set<Integer> keys = items.keySet();
+        success = hasPermission(player) && !hasCooldown(player) && player.getInventory().firstEmpty() != -1;
         KitClaimAttemptEvent attemptEvent = new KitClaimAttemptEvent(this, player, success);
         BurbKits.getPluginManager().callEvent(attemptEvent);
         if (!attemptEvent.isCancelled()) {
             if (success) {
-                for (int key : keys) {
+                TreeMap<Integer, ItemStack> clonedItems = new TreeMap<>();
+                items.keySet().forEach(key -> clonedItems.put(key, items.get(key).clone()));
+                PlayerInventory inv = player.getInventory();
+                for (int key : clonedItems.keySet()) {
                     if (inv.getItem(key) == null) {
-                        inv.setItem(key, items.get(key));
+                        inv.setItem(key, clonedItems.get(key));
                     } else {
-                        HashMap<Integer, ItemStack> items = inv.addItem(this.items.get(key));
-                        if (items.size() != 0) {
-                            player.getWorld().dropItem(player.getLocation(), this.items.get(key));
+                        HashMap<Integer, ItemStack> notAddedItems = inv.addItem(clonedItems.get(key));
+                        if (!notAddedItems.isEmpty()) {
+                            player.getWorld().dropItem(player.getLocation(), notAddedItems.get(0));
+                            notAddedItems.clear();
                         }
                     }
                 }
@@ -61,8 +67,11 @@ public class Kit {
             } else if (hasCooldown(player)) {
                 String timeString = "&cYou can only claim this kit in&e " + getPlayerCooldownDifferenceBetweenNowAsString(player) + "&c!";
                 player.sendMessage(Utils.color(timeString));
+            } else if (player.getInventory().firstEmpty() == -1) {
+                player.sendMessage(Utils.color("&cYour inventory is full!"));
             }
         }
+        return success;
     }
 
 
@@ -100,7 +109,7 @@ public class Kit {
         KitDeleteEvent event = new KitDeleteEvent(this);
         BurbKits.getPluginManager().callEvent(event);
         if (!event.isCancelled()) {
-            BurbKits.kitsConfig.set("kits."+name, null);
+            kitsConfig.set("kits."+name, null);
             BurbKits.cooldownsConfig.set("cooldowns."+name, null);
             KIT_NAMES.remove(name);
             ALL_KITS.remove(name);
@@ -120,13 +129,15 @@ public class Kit {
         KitItemsChangeEvent event = new KitItemsChangeEvent(this, this.items, items);
         BurbKits.getPluginManager().callEvent(event);
         if (!event.isCancelled()) {
+            this.items.clear();
             for (int i = 0; i <= 40; i++) {
                 if (items.get(i) == null) {
                     items.remove(i);
+                } else {
+                    this.items.put(i, items.get(i).clone());
                 }
             }
-            this.items = items;
-            BurbKits.kitsConfig.set("kits." + getName() + ".items", this.items);
+            kitsConfig.set("kits." + getName() + ".items", this.items);
         }
     }
 
@@ -139,7 +150,7 @@ public class Kit {
         BurbKits.getPluginManager().callEvent(event);
         if (!event.isCancelled()) {
             permission = perm;
-            BurbKits.kitsConfig.set("kits." + getName() + ".permission", perm);
+            kitsConfig.set("kits." + getName() + ".permission", perm);
         }
     }
 
@@ -152,7 +163,7 @@ public class Kit {
         BurbKits.getPluginManager().callEvent(event);
         if (!event.isCancelled()) {
             this.cooldown = cooldown;
-            BurbKits.kitsConfig.set("kits." + getName() + ".cooldown", this.cooldown);
+            kitsConfig.set("kits." + getName() + ".cooldown", this.cooldown);
         }
     }
 
@@ -167,6 +178,11 @@ public class Kit {
             cooldowns.put(player, millis);
             BurbKits.cooldownsConfig.set("cooldowns."+name+"."+player.getUniqueId()+".cooldown", millis);
         }
+    }
+
+    public void setCooldownBypassPermission(String perm) {
+        cooldownBypassPermission = perm;
+        BurbKits.kitsConfig.set("kits."+name+".cooldownBypass", perm);
     }
 
     /**
@@ -228,7 +244,7 @@ public class Kit {
             Calendar otherCalendar = Calendar.getInstance();
             calendar.setTimeInMillis(time);
             otherCalendar.setTimeInMillis(System.currentTimeMillis());
-            return (calendar.getTimeInMillis() < otherCalendar.getTimeInMillis()) ? null : Utils.millisToString((calendar.getTimeInMillis() - System.currentTimeMillis()));
+            return (calendar.getTimeInMillis() <= otherCalendar.getTimeInMillis()) ? null : Utils.millisToString((calendar.getTimeInMillis() - System.currentTimeMillis()));
         }
         return null;
     }
@@ -249,9 +265,10 @@ public class Kit {
      * @param player Player to check for
      * @return true/false if they have the cooldown, true if permission doesn't exist
      */
-    public boolean hasCooldown(OfflinePlayer player) {
+    public boolean hasCooldown(Player player) {
         if (cooldown != 0 && cooldowns.get(player) != null) {
             long time = cooldowns.get(player);
+            if (cooldownBypassPermission != null && player.hasPermission(cooldownBypassPermission)) { return false; }
             return !(time < System.currentTimeMillis());
         }
         return false;
@@ -322,7 +339,7 @@ public class Kit {
             KIT_NAMES.add(name);
             this.name = name;
             ALL_KITS.put(name, this);
-            BurbKits.kitsConfig.createSection("kits." + name);
+            kitsConfig.createSection("kits." + name);
         }
     }
 }

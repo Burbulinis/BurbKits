@@ -1,5 +1,7 @@
 package me.burb.burbkits;
 
+import ch.njol.skript.Skript;
+import ch.njol.skript.SkriptAddon;
 import me.burb.burbkits.api.Metrics;
 import me.burb.burbkits.api.commands.CommandKits;
 import me.burb.burbkits.api.kits.Kit;
@@ -18,6 +20,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 public class BurbKits extends JavaPlugin {
+    SkriptAddon addon;
     public static YamlConfiguration kitsConfig;
     public static YamlConfiguration cooldownsConfig;
     private static Plugin instance;
@@ -76,17 +79,21 @@ public class BurbKits extends JavaPlugin {
                     }
                 }
                 String permission = null;
+                String cooldownBypass = null;
                 long cooldown = 0;
                 if (kitsConfig.contains("kits."+key+".permission")) {
                     permission = kitsConfig.getString("kits."+key+".permission");
                 } else if (kitsConfig.contains("kits."+key+".cooldown")) {
                     cooldown = kitsConfig.getLong("kits."+key+".cooldown");
+                } else if (kitsConfig.contains("kits."+key+".cooldownBypass")) {
+                    cooldownBypass = kitsConfig.getString("kits."+key+".cooldownBypass");
                 }
                 Kit kit = new Kit(key);
                 kit.setItems(items);
                 kit.setPermission(permission);
+                kit.setCooldownBypassPermission(cooldownBypass);
                 kit.setKitCooldown(cooldown);
-                if (cooldownsConfig.contains("cooldowns")) {
+                if (cooldownsConfig.contains("cooldowns."+key)) {
                     Set<String> UUIDs = cooldownsConfig.getConfigurationSection("cooldowns."+key).getKeys(false);
                     getLogger().info(UUIDs.toString());
                     for (String uuid : UUIDs) {
@@ -100,7 +107,6 @@ public class BurbKits extends JavaPlugin {
         instance = this;
         getCommand("kits").setExecutor(new CommandKits());
         PLUGIN_MANAGER.registerEvents(new BurbListener(), this);
-
     }
 
     @Override
