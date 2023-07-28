@@ -21,11 +21,11 @@ import static org.bukkit.Sound.ITEM_ARMOR_EQUIP_CHAIN;
 public class Kit {
 
     private static final HashMap<String, Kit> ALL_KITS = new HashMap<>();
-    private final HashMap<OfflinePlayer, Long> cooldowns = new HashMap<>();
     private static final List<Kit> KITS = new ArrayList<>();
     private static final List<String> KIT_NAMES = new ArrayList<>();
     private static final List<Inventory> KIT_INVENTORIES = new ArrayList<>();
     private final TreeMap<Integer, ItemStack> items = new TreeMap<>();
+    private final HashMap<OfflinePlayer, Long> cooldowns = new HashMap<>();
     private Inventory inventory;
     private long cooldown;
     private String permission;
