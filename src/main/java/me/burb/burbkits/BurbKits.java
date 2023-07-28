@@ -1,7 +1,5 @@
 package me.burb.burbkits;
 
-import ch.njol.skript.Skript;
-import ch.njol.skript.SkriptAddon;
 import me.burb.burbkits.api.Metrics;
 import me.burb.burbkits.api.commands.CommandKits;
 import me.burb.burbkits.api.kits.Kit;
@@ -21,7 +19,6 @@ import java.util.UUID;
 
 public class BurbKits extends JavaPlugin {
 
-    SkriptAddon addon;
     public static YamlConfiguration kitsConfig;
     public static YamlConfiguration cooldownsConfig;
     private static Plugin instance;
@@ -108,15 +105,6 @@ public class BurbKits extends JavaPlugin {
         instance = this;
         getCommand("kits").setExecutor(new CommandKits());
         PLUGIN_MANAGER.registerEvents(new BurbListener(), this);
-
-        if (getServer().getPluginManager().getPlugin("Skript") != null) {
-            addon = Skript.registerAddon(this);
-            try {
-                addon.loadClasses("me.burb.burbkits.skript", "elements");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     @Override
