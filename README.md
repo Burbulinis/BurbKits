@@ -19,4 +19,4 @@ For any issues or suggestions, please make sure to visit [right here](https://gi
 ## IMPORTANT ❗❗
   **Do not** change any of the values in the files `kits.yml`, or `cooldowns.yml`, unless you **know what you are doing**
   
-  The permission to change, or create, delete kits is named `burbkits.managekits`
+  The permission to change, create, or delete kits is named `burbkits.managekits`
