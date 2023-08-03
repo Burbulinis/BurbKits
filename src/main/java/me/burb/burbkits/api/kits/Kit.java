@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.checkerframework.checker.units.qual.K;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -213,24 +214,36 @@ public class Kit {
     }
 
     public void setCooldownBypassPermission(String perm) {
-        cooldownBypassPermission = perm;
-        BurbKits.kitsConfig.set("kits."+name+".cooldownBypass", perm);
+        KitCooldownBypassChangeEvent event = new KitCooldownBypassChangeEvent(this, this.cooldownBypassPermission, perm);
+        BurbKits.getPluginManager().callEvent(event);
+        if (!event.isCancelled()) {
+            cooldownBypassPermission = perm;
+            BurbKits.kitsConfig.set("kits."+name+".cooldownBypass", perm);
+        }
     }
 
     /**
      * Removes the cooldown bypass permission of the kit if the permission exists
      */
     public void removeCooldownBypass() {
-        cooldownBypassPermission = null;
-        kitsConfig.set("kits."+name+".cooldownBypass", null);
+        KitCooldownBypassChangeEvent event = new KitCooldownBypassChangeEvent(this, this.cooldownBypassPermission, null);
+        BurbKits.getPluginManager().callEvent(event);
+        if (!event.isCancelled()) {
+            cooldownBypassPermission = null;
+            kitsConfig.set("kits."+name+".cooldownBypass", null);
+        }
     }
 
     /**
      * Remove the permission of the kit
      */
     public void removePermission() {
-        permission = null;
-        kitsConfig.set("kits."+name+".permission", null);
+        KitPermissionChangeEvent event = new KitPermissionChangeEvent(this, permission, null);
+        BurbKits.getPluginManager().callEvent(event);
+        if (!event.isCancelled()) {
+            permission = null;
+            kitsConfig.set("kits."+name+".permission", null);
+        }
     }
 
     /**
