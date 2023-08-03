@@ -9,7 +9,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-import org.checkerframework.checker.units.qual.K;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -26,7 +25,7 @@ public class Kit {
     private static final List<String> KIT_NAMES = new ArrayList<>();
     private static final List<Inventory> KIT_INVENTORIES = new ArrayList<>();
     private final TreeMap<Integer, ItemStack> items = new TreeMap<>();
-    private final HashMap<OfflinePlayer, Long> cooldowns = new HashMap<>();
+    private final HashMap<UUID, Long> cooldowns = new HashMap<>();
     private Inventory inventory;
     private long cooldown;
     private String permission;
@@ -192,10 +191,10 @@ public class Kit {
      * @param player The player that should receive the cooldown
      */
     public void setPlayerCooldown(long millis, OfflinePlayer player) {
-        KitPlayerCooldownChangeEvent event = new KitPlayerCooldownChangeEvent(this, player, cooldowns.get(player) == null ? 0 : cooldowns.get(player), millis);
+        KitPlayerCooldownChangeEvent event = new KitPlayerCooldownChangeEvent(this, player, cooldowns.get(player.getUniqueId()) == null ? 0 : cooldowns.get(player.getUniqueId()), millis);
         BurbKits.getPluginManager().callEvent(event);
         if (!event.isCancelled()) {
-            cooldowns.put(player, millis);
+            cooldowns.put(player.getUniqueId(), millis);
             BurbKits.cooldownsConfig.set("cooldowns."+name+"."+player.getUniqueId()+".cooldown", millis);
         }
     }
@@ -205,10 +204,10 @@ public class Kit {
      * @param player The player to reset the cooldown of
      */
     public void resetCooldown(OfflinePlayer player) {
-        KitPlayerCooldownChangeEvent event = new KitPlayerCooldownChangeEvent(this, player, cooldowns.get(player), 0);
+        KitPlayerCooldownChangeEvent event = new KitPlayerCooldownChangeEvent(this, player, cooldowns.get(player.getUniqueId()), 0);
         BurbKits.getPluginManager().callEvent(event);
         if (!event.isCancelled()) {
-            cooldowns.put(player, 0L);
+            cooldowns.put(player.getUniqueId(), 0L);
             BurbKits.cooldownsConfig.set("cooldowns."+name+"."+player.getUniqueId()+".cooldown", null);
         }
     }
@@ -260,8 +259,8 @@ public class Kit {
      * @return true/false if they have the cooldown, true if permission doesn't exist
      */
     public boolean hasCooldown(Player player) {
-        if (cooldown != 0 && cooldowns.get(player) != null) {
-            long time = cooldowns.get(player);
+        if (cooldown != 0 && cooldowns.get(player.getUniqueId()) != null) {
+            long time = cooldowns.get(player.getUniqueId());
             if (cooldownBypassPermission != null && player.hasPermission(cooldownBypassPermission)) { return false; }
             return !(time < System.currentTimeMillis());
         }
@@ -317,7 +316,7 @@ public class Kit {
      * @return Returns the time when the cooldown should be over for the specified Kit as UTC milliseconds from the epoch
      */
     public long getPlayerCooldownAsMillis(OfflinePlayer player) {
-        return cooldowns.get(player);
+        return cooldowns.get(player.getUniqueId());
     }
 
     /**
@@ -326,7 +325,7 @@ public class Kit {
      */
     public @Nullable Date getPlayerCooldownAsDate(OfflinePlayer player) {
         Calendar calendar = Calendar.getInstance();
-        if (cooldowns.get(player) != null) { calendar.setTimeInMillis(cooldowns.get(player)); }
+        if (cooldowns.get(player.getUniqueId()) != null) { calendar.setTimeInMillis(cooldowns.get(player.getUniqueId())); }
         return calendar.getTime();
     }
 
@@ -335,8 +334,8 @@ public class Kit {
      * @return The difference between now and the cooldown, ie how much time left till they are able to claim in a String
      */
     public @Nullable String getPlayerCooldownDifferenceBetweenNowAsString(OfflinePlayer player) {
-        if (cooldown != 0 && cooldowns.get(player) != null) {
-            long time = cooldowns.get(player);
+        if (cooldown != 0 && cooldowns.get(player.getUniqueId()) != null) {
+            long time = cooldowns.get(player.getUniqueId());
             Calendar calendar = Calendar.getInstance();
             Calendar otherCalendar = Calendar.getInstance();
             calendar.setTimeInMillis(time);
@@ -351,8 +350,8 @@ public class Kit {
      * @return The difference between now and the cooldown, ie how much time left till they are able to claim in milliseconds, 0 if no cooldown
      */
     public long getPlayerCooldownDifferenceBetweenNowAsMillis(OfflinePlayer player) {
-        if (cooldown != 0 && cooldowns.get(player) != null) {
-            long time = cooldowns.get(player);
+        if (cooldown != 0 && cooldowns.get(player.getUniqueId()) != null) {
+            long time = cooldowns.get(player.getUniqueId());
             return (time < System.currentTimeMillis()) ? 0 : (time - System.currentTimeMillis());
         }
         return 0;
