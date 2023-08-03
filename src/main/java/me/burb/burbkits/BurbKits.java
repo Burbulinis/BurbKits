@@ -19,8 +19,7 @@ import java.util.UUID;
 
 public class BurbKits extends JavaPlugin {
 
-    public static YamlConfiguration kitsConfig;
-    public static YamlConfiguration cooldownsConfig;
+    public static YamlConfiguration kitsConfig, cooldownsConfig;
     private static Plugin instance;
     private static final PluginManager PLUGIN_MANAGER = Bukkit.getServer().getPluginManager();
 
@@ -64,39 +63,35 @@ public class BurbKits extends JavaPlugin {
 
         if (kitsConfig.contains("kits")) {
             TreeMap<Integer, ItemStack> items = new TreeMap<>();
-            Set<String> keys = kitsConfig.getConfigurationSection("kits").getKeys(false);
-            for (String key : keys) {
-                Set<String> slots = kitsConfig.getConfigurationSection("kits."+key+".items").getKeys(false);
-                if (kitsConfig.contains("kits."+key+".items")) {
+            Set<String> kits = kitsConfig.getConfigurationSection("kits").getKeys(false);
+            for (String kit : kits) {
+                Set<String> slots = kitsConfig.getConfigurationSection("kits."+kit+".items").getKeys(false);
+                if (kitsConfig.isSet("kits."+kit+".items")) {
                     for (String slot : slots) {
                         try {
-                            items.put(Integer.parseInt(slot), kitsConfig.getItemStack("kits."+key+".items."+slot));
+                            items.put(Integer.parseInt(slot), kitsConfig.getItemStack("kits."+kit+".items."+slot));
                         } catch (NumberFormatException e) {
                             e.printStackTrace();
                         }
                     }
                 }
-                String permission = null;
-                String cooldownBypass = null;
-                long cooldown = 0;
-                if (kitsConfig.contains("kits."+key+".permission")) {
-                    permission = kitsConfig.getString("kits."+key+".permission");
-                } else if (kitsConfig.contains("kits."+key+".cooldown")) {
-                    cooldown = kitsConfig.getLong("kits."+key+".cooldown");
-                } else if (kitsConfig.contains("kits."+key+".cooldownBypass")) {
-                    cooldownBypass = kitsConfig.getString("kits."+key+".cooldownBypass");
+                Kit newKit = new Kit(kit);
+                newKit.setItems(items);
+                if (kitsConfig.isSet("kits."+kit+".permission")) {
+                    String permission = kitsConfig.getString("kits."+kit+".permission");
+                    newKit.setPermission(permission);
+                } if (kitsConfig.isSet("kits."+kit+".cooldown")) {
+                    long cooldown = kitsConfig.getLong("kits."+kit+".cooldown");
+                    newKit.setKitCooldown(cooldown);
+                } if (kitsConfig.isSet("kits."+kit+".cooldownBypass")) {
+                    String cooldownBypass = kitsConfig.getString("kits."+kit+".cooldownBypass");
+                    newKit.setCooldownBypassPermission(cooldownBypass);
                 }
-                Kit kit = new Kit(key);
-                kit.setItems(items);
-                kit.setPermission(permission);
-                kit.setCooldownBypassPermission(cooldownBypass);
-                kit.setKitCooldown(cooldown);
-                if (cooldownsConfig.contains("cooldowns."+key)) {
-                    Set<String> UUIDs = cooldownsConfig.getConfigurationSection("cooldowns."+key).getKeys(false);
-                    getLogger().info(UUIDs.toString());
+                if (cooldownsConfig.contains("cooldowns")) {
+                    Set<String> UUIDs = cooldownsConfig.getConfigurationSection("cooldowns."+kit).getKeys(false);
                     for (String uuid : UUIDs) {
-                        long millis = cooldownsConfig.getLong("cooldowns."+key+"."+uuid+".cooldown");
-                        kit.setPlayerCooldown(millis, Bukkit.getOfflinePlayer(UUID.fromString(uuid)));
+                        long millis = cooldownsConfig.getLong("cooldowns."+kit+"."+uuid+".cooldown");
+                        newKit.setPlayerCooldown(millis, Bukkit.getOfflinePlayer(UUID.fromString(uuid)));
                     }
                 }
             }

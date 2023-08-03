@@ -48,7 +48,7 @@ public class Kit {
             KIT_NAMES.add(name);
             this.name = name;
             ALL_KITS.put(name, this);
-            kitsConfig.createSection("kits." + name);
+            if (!kitsConfig.contains("kits."+name)) { kitsConfig.createSection("kits." + name); }
         }
     }
 
@@ -182,7 +182,7 @@ public class Kit {
         BurbKits.getPluginManager().callEvent(event);
         if (!event.isCancelled()) {
             this.cooldown = cooldown;
-            kitsConfig.set("kits." + getName() + ".cooldown", this.cooldown);
+            kitsConfig.set("kits." + getName() + ".cooldown", cooldown);
         }
     }
 
@@ -203,7 +203,7 @@ public class Kit {
      * Reset the cooldown of a player
      * @param player The player to reset the cooldown of
      */
-    public void resetCooldown(Player player) {
+    public void resetCooldown(OfflinePlayer player) {
         KitPlayerCooldownChangeEvent event = new KitPlayerCooldownChangeEvent(this, player, cooldowns.get(player), 0);
         BurbKits.getPluginManager().callEvent(event);
         if (!event.isCancelled()) {
@@ -215,6 +215,22 @@ public class Kit {
     public void setCooldownBypassPermission(String perm) {
         cooldownBypassPermission = perm;
         BurbKits.kitsConfig.set("kits."+name+".cooldownBypass", perm);
+    }
+
+    /**
+     * Removes the cooldown bypass permission of the kit if the permission exists
+     */
+    public void removeCooldownBypass() {
+        cooldownBypassPermission = null;
+        kitsConfig.set("kits."+name+".cooldownBypass", null);
+    }
+
+    /**
+     * Remove the permission of the kit
+     */
+    public void removePermission() {
+        permission = null;
+        kitsConfig.set("kits."+name+".permission", null);
     }
 
     /**
@@ -237,6 +253,20 @@ public class Kit {
             return !(time < System.currentTimeMillis());
         }
         return false;
+    }
+
+    /**
+     * @return true/false depending on if this kit has a cooldown bypass permission
+     */
+    public boolean cooldownBypassExists() {
+        return cooldownBypassPermission != null;
+    }
+
+    /**
+     * @return true/false depending on if this kit has a permission
+     */
+    public boolean permissionExists() {
+        return permission != null;
     }
 
     /**

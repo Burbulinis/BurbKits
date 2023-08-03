@@ -2,6 +2,7 @@ package me.burb.burbkits.api.commands;
 
 import me.burb.burbkits.api.kits.Kit;
 import me.burb.burbkits.api.utils.Utils;
+import org.bukkit.Bukkit;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -64,6 +65,43 @@ public class CommandKits implements TabExecutor {
                         sender.sendMessage(Utils.color("&aSuccessfully deleted the Kit '" + arg2 + "'"));
                     } else { sender.sendMessage(Utils.color("&cKit named '" + arg2 + "' does not exist")); }
                 } else { sender.sendMessage(Utils.color("&cYou don't have permission!")); }
+            } else if (arg1.equalsIgnoreCase("resetCooldown")) {
+                if (sender.hasPermission("burbkits.managekits")) {
+                    if (args.length >= 3) {
+                        if (leKit != null) {
+                            if (Bukkit.getOfflinePlayerIfCached(args[2]) != null) {
+                                if (Bukkit.getOfflinePlayerIfCached(args[2]).isOnline()) {
+                                    if (leKit.hasCooldown(Bukkit.getPlayer(args[2]))) {
+                                        Bukkit.getPlayer(args[2]).sendMessage(Utils.color("&aYour cooldown of the Kit '"+leKit.getName()+"' has been reset!"));
+                                    } else {
+                                        sender.sendMessage(Utils.color("&cThis player doesn't have a cooldown for the Kit '"+leKit.getName()+"'"));
+                                        return true;
+                                    }
+                                }
+                                leKit.resetCooldown(Bukkit.getOfflinePlayerIfCached(args[2]));
+                                sender.sendMessage(Utils.color("&aSuccessfully reset the cooldown of '"+Bukkit.getOfflinePlayerIfCached(args[2]).getName()+"' for the Kit '"+leKit.getName()+"'"));
+                            } else { sender.sendMessage(Utils.color("&cThe player '"+args[2]+"' does not exist!")); }
+                        } else { sender.sendMessage(Utils.color("&cKit named '" + arg2 + "' does not exist")); }
+                    } else { sender.sendMessage(Utils.color("&cPlease enter the arguments!")); }
+                } else { sender.sendMessage(Utils.color("&cYou don't have permission!")); }
+            } else if (arg1.equalsIgnoreCase("removeCooldownBypass")) {
+                if (sender.hasPermission("burbkits.managekits")) {
+                    if (leKit != null) {
+                        if (leKit.cooldownBypassExists()) {
+                            leKit.removeCooldownBypass();
+                            sender.sendMessage(Utils.color("&aSuccessfully removed the cooldown bypass permission of the Kit '" + leKit.getName() + "'"));
+                        } else { sender.sendMessage(Utils.color("&cThis kit does not have a cooldown bypass permission!")); }
+                    } else { sender.sendMessage(Utils.color("&cKit named '" + arg2 + "' does not exist")); }
+                } else { sender.sendMessage(Utils.color("&cYou don't have permission!")); }
+            } else if (arg1.equalsIgnoreCase("removePermission")) {
+                if (sender.hasPermission("burbkits.managekits")) {
+                    if (leKit != null) {
+                        if (leKit.permissionExists()) {
+                            leKit.removePermission();
+                            sender.sendMessage(Utils.color("&aSuccessfully removed the permission of the Kit '"+leKit.getName()+"'"));
+                        } else { sender.sendMessage(Utils.color("&cThis kit does not have a permission!")); }
+                    } else { sender.sendMessage(Utils.color("&cKit named '" + arg2 + "' does not exist")); }
+                } else { sender.sendMessage(Utils.color("&cYou don't have permission!")); }
             } else if (arg1.equalsIgnoreCase("claim")) {
                 if (sender instanceof Player) {
                     if (leKit != null) {
@@ -112,7 +150,7 @@ public class CommandKits implements TabExecutor {
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (args.length == 1) {
             if (sender instanceof Player && sender.hasPermission("burbkits.managekits")) {
-                return List.of("create", "delete", "info", "claim", "override", "setPermission", "setCooldown", "setCooldownBypass");
+                return List.of("create", "delete", "info", "claim", "override", "setPermission", "setCooldown", "setCooldownBypass", "removePermission", "removeCooldownBypass", "resetCooldown");
             } else if (sender instanceof Player && !sender.hasPermission("BurbKits.manageKits")) {
                 return List.of("info", "claim");
             }
