@@ -1,8 +1,11 @@
 package me.burb.burbkits.api.utils;
 
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
@@ -13,6 +16,11 @@ import static org.bukkit.ChatColor.translateAlternateColorCodes;
 
 @SuppressWarnings("deprecation")
 public class Utils {
+
+    private static final String PREFIX = "&7[&6Burb&eKits&7]&r ";
+    private static final Pattern HEX_PATTERN = Pattern.compile("<#([A-Fa-f\\d]){6}>");
+    private static final boolean SKRIPT_IS_THERE = Bukkit.getPluginManager().getPlugin("Skript") != null;
+
     public static String color(String s) {
         return translateAlternateColorCodes('&', s);
     }
@@ -20,11 +28,50 @@ public class Utils {
     public static void fillAllSlots(Inventory GUI, Material material) {
         ItemStack item = new ItemStack(material);
         ItemMeta itemMeta = item.getItemMeta();
+
         itemMeta.setDisplayName(" ");
         item.setItemMeta(itemMeta);
+
         for (int i = 0; i < 54; i++) {
             GUI.setItem(i, item);
         }
+    }
+
+    @SuppressWarnings("deprecation") // Paper deprecation
+    public static String getColString(String string) {
+        Matcher matcher = HEX_PATTERN.matcher(string);
+        if (SKRIPT_IS_THERE) {
+            while (matcher.find()) {
+                final ChatColor hexColor = ChatColor.valueOf(matcher.group().substring(1, matcher.group().length() - 1));
+                final String before = string.substring(0, matcher.start());
+                final String after = string.substring(matcher.end());
+                string = before + hexColor + after;
+                matcher = HEX_PATTERN.matcher(string);
+            }
+        } else {
+            string = HEX_PATTERN.matcher(string).replaceAll("");
+        }
+        return ChatColor.translateAlternateColorCodes('&', string);
+    }
+
+    public static TreeMap<Integer, ItemStack> itemsFromInventory(PlayerInventory inv) {
+        TreeMap<Integer, ItemStack> items = new TreeMap<>();
+
+        for (int i = 0; i <= 40; i++) {
+            items.put(i, inv.getItem(i));
+        }
+
+        return items;
+    }
+
+    public static void log(String format, Object... objects) {
+        String log = String.format(format, objects);
+        Bukkit.getConsoleSender().sendMessage(getColString(PREFIX + log));
+    }
+
+    public static void logLoading(String format, Object... objects) {
+        String form = String.format(format, objects);
+        log(form);
     }
 
     public static String millisToString(long milliseconds) {
@@ -86,9 +133,11 @@ public class Utils {
     }
     public static String getWholeString(List<String> strList) {
         StringJoiner joiner = new StringJoiner(" ");
+
         for (String str : strList) {
             joiner.add(str);
         }
+
         return joiner.toString();
     }
 }

@@ -1,0 +1,10 @@
+burbkits:
+  permission: burbkits.managekits # Default permission to manage kits, if you do not insert one
+  messages:
+    NO_PERMISSION: '&cYou don''t have permission!' # Default message if not defined
+    NO_COOLDOWN: '&cYou can only claim this kit in&e %cooldown% &c!' # Default message if not defined
+    FULL_INVENTORY: '&cYour inventory is full!' # Default message if not defined
+    RESET_COOLDOWN: '&aYour cooldown of the kit ''%kit%'' has been reset!' # Default message if not defined
+    NON_EXISTING_KIT: '&cKit named ''%name%'' does not exist' # Default message if not defined
+    OPENED_INVENTORY: '&aSuccessfully opened the kit inventory of kit ''%kit%''' # Default message if not defined
+    CLAIM_KIT: '&aSuccessfully claimed the kit ''%kit%''' # Default message if not defined

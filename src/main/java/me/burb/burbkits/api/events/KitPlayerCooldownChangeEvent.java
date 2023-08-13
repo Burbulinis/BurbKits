@@ -6,11 +6,13 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
+import java.sql.Timestamp;
+
 public class KitPlayerCooldownChangeEvent extends KitEvent implements Cancellable {
     private boolean cancelled;
     private final OfflinePlayer player;
-    private final long oldCooldown;
-    private final long newCooldown;
+    private final Timestamp oldCooldown;
+    private final Timestamp newCooldown;
     private static final HandlerList HANDLERS = new HandlerList();
 
     @Override
@@ -32,7 +34,7 @@ public class KitPlayerCooldownChangeEvent extends KitEvent implements Cancellabl
         cancelled = b;
     }
 
-    public KitPlayerCooldownChangeEvent(Kit kit, OfflinePlayer player, long oldCooldown, long newCooldown) {
+    public KitPlayerCooldownChangeEvent(Kit kit, OfflinePlayer player, Timestamp oldCooldown, Timestamp newCooldown) {
         super(kit);
         this.player = player;
         this.oldCooldown = oldCooldown;
@@ -42,10 +44,10 @@ public class KitPlayerCooldownChangeEvent extends KitEvent implements Cancellabl
     public OfflinePlayer getPlayer() {
         return player;
     }
-    public long getOldCooldown() {
+    public Timestamp getOldCooldown() {
         return oldCooldown;
     }
-    public long getNewCooldown() {
+    public Timestamp getNewCooldown() {
         return newCooldown;
     }
 }
