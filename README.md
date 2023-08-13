@@ -32,7 +32,7 @@ Creating a kit is by far super simple, you can use this [Create Kit EffectSectio
 
 Here I will be sharing some code examples :)
 
-```groovy
+```
 set {_items::*} to items in player's inventory
 
 create a new kit named "myKit" with the items stored in {_items::*}:
