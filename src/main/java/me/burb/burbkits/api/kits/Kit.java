@@ -35,7 +35,6 @@ public class Kit {
 
     // Custom messages
     private final Config config = BurbKits.getBurbConfig();
-    private final String PREFIX = "&7[&6Burb&eKits&7]&r ";
     private final String NO_COOLDOWN = config.NO_COOLDOWN == null ? config.DEFAULT_NO_COOLDOWN : config.NO_COOLDOWN;
     private final String FULL_INVENTORY = config.FULL_INVENTORY == null ? config.DEFAULT_FULL_INVENTORY : config.FULL_INVENTORY;
     private final String NO_PERMISSION = config.NO_PERMISSION == null ? config.DEFAULT_NO_PERMISSION : config.NO_PERMISSION;
@@ -67,6 +66,7 @@ public class Kit {
      * @return The success, ie if they could claim the kit, or not
      */
     public boolean claimKit(Player player, boolean sendMessages) {
+        final String PREFIX = "&7[&6Burb&eKits&7]&r ";
         boolean success = hasPermission(player) && !hasCooldown(player) && player.getInventory().firstEmpty() != -1;
         KitClaimAttemptEvent attemptEvent = new KitClaimAttemptEvent(this, player, success);
         BurbKits.getPluginManager().callEvent(attemptEvent);
